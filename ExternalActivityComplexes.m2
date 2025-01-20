@@ -17,7 +17,8 @@ newPackage(
 )
 
 export{
-    "diagonalDilworthTruncation"	  --not documented, has tests
+    "diagonalDilworthTruncation",	  --documented, has tests
+    "kempfCollapsing"			  --no doc, no tests
 }
     
 ------------------------------------------------------------------------------
@@ -39,9 +40,31 @@ diagonalDilworthTruncation(Matroid, Matroid) := Matroid => (M1,M2) -> (
     circuitsFinal := apply(toList circuitList, i-> toList i);
     matroid(toList G, circuitsFinal, EntryMode => "circuits")
     )
-    
 
+kempfCollapsing = method()
 
+kempfCollapsing(Matrix, Matrix) := Ideal => (A1,A2) -> (
+    if (numcols A1 != numcols A2) then error("A1 and A2 should have the same number of columns.");
+    n := numcols A1;
+    m1 := numrows A1;
+    m2 := numrows A2;
+    (t,u,v) := (getSymbol "t", getSymbol "u", getSymbol "v");
+    R := ZZ/101[u_1..u_m1,v_1..v_m2,t_1..t_n];
+    S := ZZ/101[x_1..x_n,y_1..y_n];
+    use R;
+    T := diagonalMatrix((gens R)_{numgens R-n..numgens R-1});
+    tInvVars := apply(1..n, i-> product select((gens R)_{numgens R-n..numgens R-1}, j-> last baseName j != i));
+    Tinv := diagonalMatrix((gens R)_{numgens R-n..numgens R-1});
+    L1 := matrix{(gens R)_{0..m1-1}}*A1*T;
+    L2 := matrix{(gens R)_{m1..m1+m2-1}}*A2*Tinv;
+    phi := map(R,S,L1|L2);
+    kernel phi
+    );
+
+A1 = matrix{{1,1,1,1}}
+A2 = matrix{{1,0,0,0},{0,1,0,0}}
+
+kempfCollapsing(A1,A2)
 ------------------------------------------------------------------------------
 ------------------------------------------------------------------------------
 -- **DOCUMENTATION** --
@@ -124,37 +147,12 @@ end---------------------------------------------------------------------------
 ---------------------
 --Ayah's sandbox
 ---------------------
---M1 = uniformMatroid(3,5)
---M2 = uniformMatroid(1,5)
-M1 = specificMatroid "fano"
-M2 = specificMatroid "nonfano"
-G = groundSet M1
-possibleCircuits = drop(subsets G,1) 
-circuitList = new MutableList
-circuitHash = new MutableHashTable
-for C in possibleCircuits do(
-    if (rank(M1,C) + rank(M2,C) == #C) then (
-	circuitList#(#circuitList) = C;
-	);
-    );
-circuitsFinal = apply(toList circuitList, i-> toList i)
-C = circuitsFinal_2
-D = matroid(toList G, circuitsFinal, EntryMode => "circuits")
+A1 = matrix{{1,1,1,1}}
+A2 = matrix{{1,0,0,0},{0,1,0,0}}
 
-circuitDecomp = new MutableHashTable
-for C in circuitsFinal do(
-    M1C = restriction(M1,C)
-    M2C = restriction(M2,C)
-    
-    
+kempfCollapsing(A1,A2)
 
-circuits M1
-circuits M2
 
-bases M1
-bases M2
-
---want to keep track of I1 and I2 for each circuit...
 ------------------------------------
 --Development Section
 ------------------------------------
