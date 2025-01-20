@@ -18,7 +18,8 @@ newPackage(
 
 export{
     "diagonalDilworthTruncation",	  --documented, has tests
-    "kempfCollapsing"			  --no doc, no tests
+    "kempfCollapsing",			  --no doc, no tests
+    "affineSchubertVariety"		  --no doc, no tests
 }
     
 ------------------------------------------------------------------------------
@@ -41,30 +42,56 @@ diagonalDilworthTruncation(Matroid, Matroid) := Matroid => (M1,M2) -> (
     matroid(toList G, circuitsFinal, EntryMode => "circuits")
     )
 
-kempfCollapsing = method()
+kempfCollapsing = method(
+    Options => {
+	CoefficientRing => QQ
+	}
+    )
 
-kempfCollapsing(Matrix, Matrix) := Ideal => (A1,A2) -> (
+kempfCollapsing(Matrix, Matrix) := o -> (A1,A2) -> (
     if (numcols A1 != numcols A2) then error("A1 and A2 should have the same number of columns.");
+    kk := o.CoefficientRing;
     n := numcols A1;
     m1 := numrows A1;
     m2 := numrows A2;
-    (t,u,v) := (getSymbol "t", getSymbol "u", getSymbol "v");
-    R := ZZ/101[u_1..u_m1,v_1..v_m2,t_1..t_n];
-    S := ZZ/101[x_1..x_n,y_1..y_n];
+    (t,u,v,x,y) := (getSymbol "t", getSymbol "u", getSymbol "v",getSymbol "x", getSymbol "y");
+    R := kk[u_1..u_m1,v_1..v_m2,t_1..t_n];
+    S := kk[x_1..x_n,y_1..y_n];
     use R;
     T := diagonalMatrix((gens R)_{numgens R-n..numgens R-1});
     tInvVars := apply(1..n, i-> product select((gens R)_{numgens R-n..numgens R-1}, j-> last baseName j != i));
-    Tinv := diagonalMatrix((gens R)_{numgens R-n..numgens R-1});
+    Tinv := diagonalMatrix(toList tInvVars);
     L1 := matrix{(gens R)_{0..m1-1}}*A1*T;
     L2 := matrix{(gens R)_{m1..m1+m2-1}}*A2*Tinv;
     phi := map(R,S,L1|L2);
     kernel phi
     );
 
-A1 = matrix{{1,1,1,1}}
-A2 = matrix{{1,0,0,0},{0,1,0,0}}
 
-kempfCollapsing(A1,A2)
+affineSchubertVariety = method(
+    Options => {
+	CoefficientRing => QQ
+	}
+    )
+
+affineSchubertVariety(Matrix, Matrix) := o -> (A1,A2) -> (
+    if (numcols A1 != numcols A2) then error("A1 and A2 should have the same number of columns.");
+    kk := o.CoefficientRing;
+    n := numcols A1;
+    m1 := numrows A1;
+    m2 := numrows A2;
+    (t,u,v,x,y) := (getSymbol "t", getSymbol "u", getSymbol "v", getSymbol "x", getSymbol "y");
+    R := kk[u_1..u_m1,v_1..v_m2,t_1..t_n];
+    S := kk[x_1..x_n,y_1..y_n];
+    use R;
+    T := diagonalMatrix((gens R)_{numgens R-n..numgens R-1});
+    L1 := matrix{(gens R)_{0..m1-1}}*A1*T;
+    L2 := matrix{(gens R)_{m1..m1+m2-1}}*A2*T;
+    phi := map(R,S,L1|L2);
+    kernel phi
+    );
+
+
 ------------------------------------------------------------------------------
 ------------------------------------------------------------------------------
 -- **DOCUMENTATION** --
@@ -144,14 +171,33 @@ end---------------------------------------------------------------------------
 ------------------------------------------------------------------------------
 ------------------------------------------------------------------------------
 
+    if (numcols A1 != numcols A2) then error("A1 and A2 should have the same number of columns.");
+    kk = QQ
+    n = numcols A1;
+    m1 = numrows A1;
+    m2 = numrows A2;
+    (t,u,v,x,y) = (getSymbol "t", getSymbol "u", getSymbol "v",getSymbol "x", getSymbol "y");
+    R = kk[u_1..u_m1,v_1..v_m2,t_1..t_n];
+    S = kk[x_1..x_n,y_1..y_n];
+    use R;
+    T = diagonalMatrix((gens R)_{numgens R-n..numgens R-1});
+    tInvVars = apply(1..n, i-> product select((gens R)_{numgens R-n..numgens R-1}, j-> last baseName j != i));
+    Tinv = diagonalMatrix(toList tInvVars);
+    L1 = matrix{(gens R)_{0..m1-1}}*A1*T;
+    L2 = matrix{(gens R)_{m1..m1+m2-1}}*A2*Tinv;
+    phi = map(R,S,L1|L2);
+    kernel phi
+    );
+
+
 ---------------------
 --Ayah's sandbox
 ---------------------
-A1 = matrix{{1,1,1,1}}
-A2 = matrix{{1,0,0,0},{0,1,0,0}}
+A1 = random(QQ^2,QQ^3)
+A2 = random(QQ^1,QQ^3)
 
 kempfCollapsing(A1,A2)
-
+affineSchubertVariety(A1,A2)
 
 ------------------------------------
 --Development Section
