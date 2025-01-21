@@ -260,11 +260,83 @@ diagonalDilworthTruncation(Matroid, Matroid) := Matroid => (M1,M2) -> (
 A23 = random(QQ^2,QQ^3);
 A13 = random(QQ^1,QQ^3);
 
+---
+
 I = affineSchubertVariety(A23,A13)
 inI = monomialIdeal leadTerm I
 dual inI
 
+----
 
+L = matrix{{1,1,1,1},{0,1,2,3}};
+I = kempfCollapsingBeta(L,L)
+mingens I                                                    
+inI = ideal leadTerm I
+M = matroid L
+flats M
+
+mingens I
+J = ideal (gens I)_{0..3,6..12}
+decompose J
+
+
+needsPackage "gfanInterface"
+--gfan I --too slow
+
+------------------
+
+L = matrix{{1,1,1,1},{0,1,2,3}}
+symL = symmetricPower(2,L)
+loadPackage "SchurFunctors"
+schur({2},L)
+
+I = ideal mingens kempfCollapsingBeta(L,L)
+gfan I
+
+
+
+----
+
+L3 = matrix{{1,0,1,1,1},{0,1,1,1,-1},{0,0,1,0,0}};
+I = kempfCollapsingBeta(L3,L3)
+transpose mingens I
+M = matroid L3
+flats M
+
+------------
+U23 = random(QQ^2,QQ^3);
+I = kempfCollapsingBeta(U23,U23);
+mingens I
+
+----
+--4 coplanar points
+L = matrix{{1,0,0,1,0,0},{0,1,0,1,0,0},{0,0,1,1,0,1},{0,0,0,0,1,1}};
+I = kempfCollapsingBeta(L,L);
+transpose mingens I
+
+----
+--crazy example
+L = matrix{
+    {1,0,0,0,0,0,0},
+    {0,1,0,1,0,0,1},
+    {0,0,1,1,0,1,1},
+    {0,0,0,0,1,1,1}
+    }
+I = kempfCollapsingBeta(L,L);
+transpose mingens I
+flatten entries mingens I
+netList oo
+
+----
+U = matrix{{1,1,1,1,1},{0,1,2,3,4}};
+J = kempfCollapsing(U,U)
+gfan J
+netList oo
+transpose mingens J
+
+
+M = matroid L;
+flats M
 ------------------------------------
 --Development Section
 ------------------------------------
