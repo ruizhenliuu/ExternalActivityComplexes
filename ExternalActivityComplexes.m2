@@ -19,7 +19,8 @@ newPackage(
 export{
     "diagonalDilworthTruncation",	  --documented, has tests
     "kempfCollapsing",			  --no doc, no tests
-    "affineSchubertVariety"		  --no doc, no tests
+    "affineSchubertVariety",		  --no doc, no tests
+    "kempfCollapsingBeta"		  --no doc, no tests
 }
     
 ------------------------------------------------------------------------------
@@ -92,6 +93,32 @@ affineSchubertVariety(Matrix, Matrix) := o -> (A1,A2) -> (
     );
 
 
+kempfCollapsingBeta = method(
+    Options => {
+	CoefficientRing => QQ
+	}
+    )
+
+kempfCollapsingBeta(Matrix, Matrix) := o -> (A1,A2) -> (
+    if (numcols A1 != numcols A2) then error("A1 and A2 should have the same number of columns.");
+    kk := o.CoefficientRing;
+    n := numcols A1;
+    m1 := numrows A1;
+    m2 := numrows A2;
+    (t,u,v,x,y,z) := (getSymbol "t", getSymbol "u", getSymbol "v",getSymbol "x", getSymbol "y", getSymbol "z");
+    R := kk[u_1..u_m1,v_1..v_m2,t_1..t_n];
+    S := QQ[x_1..x_n,y_1..y_n,z_1..z_n];
+    use R;
+    T := diagonalMatrix((gens R)_{numgens R-n..numgens R-1});
+    tInvVars := apply(1..n, i-> product select((gens R)_{numgens R-n..numgens R-1}, j-> last baseName j != i));
+    Tinv := diagonalMatrix(toList tInvVars);
+    L1 := matrix{(gens R)_{0..m1-1}}*A1*T;
+    L2 := matrix{(gens R)_{m1..m1+m2-1}}*A2*Tinv;
+    C := matrix {(gens R)_{numgens R-n..numgens R-1}};
+    phi := map(R,S,L1|L2|C);
+    kernel phi
+    );
+
 ------------------------------------------------------------------------------
 ------------------------------------------------------------------------------
 -- **DOCUMENTATION** --
@@ -153,6 +180,7 @@ TEST ///
 --diagonal Dilworth of any M with U(1,n) should yield M
 U35 = uniformMatroid(3,5);
 U15 = uniformMatroid(1,5);
+D = diagonalDilworthTruncation(U35,U15)
 assert(diagonalDilworthTruncation(U35,U15) == U35)
 ///
 
@@ -171,33 +199,71 @@ end---------------------------------------------------------------------------
 ------------------------------------------------------------------------------
 ------------------------------------------------------------------------------
 
-    if (numcols A1 != numcols A2) then error("A1 and A2 should have the same number of columns.");
-    kk = QQ
-    n = numcols A1;
-    m1 = numrows A1;
-    m2 = numrows A2;
-    (t,u,v,x,y) = (getSymbol "t", getSymbol "u", getSymbol "v",getSymbol "x", getSymbol "y");
-    R = kk[u_1..u_m1,v_1..v_m2,t_1..t_n];
-    S = kk[x_1..x_n,y_1..y_n];
-    use R;
-    T = diagonalMatrix((gens R)_{numgens R-n..numgens R-1});
-    tInvVars = apply(1..n, i-> product select((gens R)_{numgens R-n..numgens R-1}, j-> last baseName j != i));
-    Tinv = diagonalMatrix(toList tInvVars);
-    L1 = matrix{(gens R)_{0..m1-1}}*A1*T;
-    L2 = matrix{(gens R)_{m1..m1+m2-1}}*A2*Tinv;
-    phi = map(R,S,L1|L2);
-    kernel phi
-    );
+    G = groundSet M1; --assuming they have the same G for now
+    possibleCircuits = drop(subsets G,1); --drop empty set
+    circuitList = new MutableList;
+    circuitDecomps = new MutableHashTable;
+    for C in possibleCircuits do(
+	if (rank(M1,C) + rank(M2,C) == #C) then (
+	    circuitList#(#circuitList) = C
+	    (M1C, M2C) = (M1|C, M2|C)
+	    basesM1C = apply(bases M1C, i-> M1C_(toList i))
+	    basesM2C = apply(bases M2C, i-> M2C_(toList i))
+	    for i in basesM1C do(
+	        Cdiff = sort toList((set C)-(set i))
+		if any(basesM2C, i-> i == Cdiff) then (
+		    circuitDecomps#C = (i,Cdiff);
+		    break;
+		    );
+		);
+	    );
+	);
+    circuitsFinal = apply(toList circuitList, i-> toList i);
+    D = matroid(toList G, circuitsFinal, EntryMode => "circuits");
+    D.cache.circuitDecomposition = circuitDecomps;
+    D
 
 
+    diagonalDilworthTruncation = method()
+
+--maybe cache I1 and I2 in a hash table for each C?
+diagonalDilworthTruncation(Matroid, Matroid) := Matroid => (M1,M2) -> (
+    G := groundSet M1; --assuming they have the same G for now
+    possibleCircuits := drop(subsets G,1); --drop empty set
+    circuitList := new MutableList;
+    circuitDecomps := new MutableHashTable;
+    for C in possibleCircuits do(
+	if (rank(M1,C) + rank(M2,C) == #C) then (
+	    circuitList#(#circuitList) = C;
+	    (M1C, M2C) := (M1|C, M2|C);
+	    basesM1C := apply(bases M1C, i-> M1C_(toList i));
+	    basesM2C := apply(bases M2C, i-> M2C_(toList i));
+	    for i in basesM1C do(
+	        Cdiff := sort toList((set C)-(set i));
+		if any(basesM2C, i-> i == Cdiff) then (
+		    circuitDecomps#C = (i,Cdiff);
+		    break;
+		    );
+		);
+	    );
+	);
+    circuitsFinal := apply(toList circuitList, i-> toList i);
+    D := matroid(toList G, circuitsFinal, EntryMode => "circuits");
+    D.cache.circuitDecomposition = circuitDecomps;
+    D
+    )
+*-
 ---------------------
 --Ayah's sandbox
 ---------------------
-A1 = random(QQ^2,QQ^3)
-A2 = random(QQ^1,QQ^3)
 
-kempfCollapsing(A1,A2)
-affineSchubertVariety(A1,A2)
+A23 = random(QQ^2,QQ^3);
+A13 = random(QQ^1,QQ^3);
+
+I = affineSchubertVariety(A23,A13)
+inI = monomialIdeal leadTerm I
+dual inI
+
 
 ------------------------------------
 --Development Section
