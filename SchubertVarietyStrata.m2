@@ -49,7 +49,7 @@ BBStratum(Ideal, List) := (I, S) ->  (
 
 BBStrataFromA1 = method()
 BBStrataFromA1(Matrix, Matrix) := (A1,A2) -> (
-    Coords := fixedPtsList(A1,A2);
+    Coords := fixedPtCoordList(A1,A2);
     I = affineSchubertVariety(A1,A2);
     for c in Coords list {c,BBStratum(I,c)}
 )
@@ -66,7 +66,18 @@ A2 = matrix{
     {0,1,2,3,4,5}
 } 
 
-BBStrataFromA1(A1,A2)
+bbstrata = BBStrataFromA1(A1,A2)
+
+fn = "output.csv";
+
+-- Write to excel
+fn << "IndexingSet,Generators\n";
+
+for entry in bbstrata do (
+  fn << "\"" | toString entry#0 | "\"" | "," | "\"" | toString entry#1 | "\"" | "\n";
+);
+
+fn << close;
 
 fixedpts = SchubertfixedPts(A1, A2);
 
