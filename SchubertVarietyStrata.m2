@@ -43,6 +43,25 @@ BBStratum(Ideal, List) := (I, S) ->  (
     saturate(radical I+Wall, Zs)
 )
 
+
+-- Given two an r1-by-n matrix A1 and an r2-by-n matrix A2, return the Bialynicki-Birula
+-- stratification of the matroid Schubert variety of the pair (A1, A2).
+-- Atrata given in the form (zero coordinates, equation at A^I)
+BBCells = method()
+BBCells(Matrix, Matrix) := (A1,A2) -> (
+    Coords := fixedPtCoordList(A1,A2);
+    I = affineSchubertVariety(A1,A2);
+    n = dim ring I // 2;
+    for c in Coords list (
+        J = sub(I, toList (
+        ((1..n)/(i->(x_i => if isMember(i,c) then x_i else 1))) |
+        ((1..n)/(i->(y_i => if isMember(i,c) then y_i else 0)))
+        )
+    );
+    {c,J}
+    )
+)
+
 -- Given two an r1-by-n matrix A1 and an r2-by-n matrix A2, return the Bialynicki-Birula
 -- stratification of the matroid Schubert variety of the pair (A1, A2).
 -- Atrata given in the form (zero coordinates, equation for stratum closure)
@@ -67,6 +86,9 @@ A2 = matrix{
 } 
 
 bbstrata = BBStrataFromA1(A1,A2)
+bbcells = BBCells(A1,A2)
+
+"example1cell.txt" << netList bbcells << close
 
 fn = "output.csv";
 
