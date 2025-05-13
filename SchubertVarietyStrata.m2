@@ -55,7 +55,7 @@ BBCells(Matrix, Matrix) := (A1,A2) -> (
     for c in Coords list (
         J = sub(I, toList (
         ((1..n)/(i->(x_i => if isMember(i,c) then x_i else 1))) |
-        ((1..n)/(i->(y_i => if isMember(i,c) then y_i else 0)))
+        ((1..n)/(i->(y_i => if isMember(i,c) then 1 else 0)))
         )
     );
     {c,J}
