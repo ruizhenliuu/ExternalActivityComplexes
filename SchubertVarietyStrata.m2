@@ -162,8 +162,7 @@ for entry in bbstrata do (
         "\"" | toString entry#1 | "\"" | "," |
         "\"" | toString entry#2 | "\"" | "," |
         "\"" | toString entry#3 | "\"" | "," |
-        "\"" | toString entry#4 | "\"" | "," |
-        "\n";
+        "\"" | toString entry#4 | "\"" | "\n";
 );
 
 fn << close;
