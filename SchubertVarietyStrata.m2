@@ -63,10 +63,35 @@ SupportSets(List) := (lst) -> (
             ySupp = append(ySupp, i1);
             dilworthSupp = append(dilworthSupp, i1+i2);
        );
-       dilworthSupp = append(dilworthSupp, set sx + set sy);
     );
     hashTable {"x" => set xSupp, "y" => set ySupp, "d"=>set dilworthSupp}
 )
+
+SupportSetsC = method()
+SupportSetsC(List,List) := (lst,Coords) -> (
+    n = dim ring lst#0 // 2; 
+    xSupp = {};
+    ySupp = {};
+    dilworthSupp = {};
+    for eq in lst do (
+       allsupp = apply(flatten entries monomials eq, support);
+       for m in allsupp do (
+            i2 = set apply(select(m, v -> match("x_",toString v)), 
+            m -> index(m)+1 );
+            i1 = set apply(select(m, v -> match("y_",toString v)), 
+            m -> index(m)-n + 1);
+            xSupp = append(xSupp, i2);
+            ySupp = append(ySupp, i1);
+            dilworthSupp = append(dilworthSupp, i1+i2);
+       );
+    );
+    coordset = set Coords;
+    xSupp = select(xSupp, I -> isSubset(I, coordset));
+    ySupp = select(ySupp, I -> isSubset(I, coordset));
+    dilworthSupp = select(dilworthSupp, I -> isSubset(I, coordset));
+    hashTable {"x" => set xSupp, "y" => set ySupp, "d"=>set dilworthSupp}
+)
+
 
 -- Precondition: two an r1-by-n matrix A1 and an r2-by-n matrix A2,
 -- Postcondition: the Bialynicki-Birula
@@ -79,7 +104,7 @@ BBCells(Matrix, Matrix) := (A1,A2) -> (
     Coords := fixedPtCoordList(A1,A2);
     I = affineSchubertVariety(A1,A2);
     n = dim ring I // 2;
-    hashTable for c in Coords list (
+    for c in Coords list (
         J = sub(I, toList (
         ((1..n)/(i->(x_i => if isMember(i,c) then x_i else 1))) |
         ((1..n)/(i->(y_i => if isMember(i,c) then 1 else 0)))
@@ -99,7 +124,12 @@ BBStrataFromA1 = method()
 BBStrataFromA1(Matrix, Matrix) := (A1,A2) -> (
     Coords := fixedPtCoordList(A1,A2);
     I = affineSchubertVariety(A1,A2);
-    hashTable for c in Coords list c => BBStratum(I,c)
+    for c in Coords list (
+    strat =  BBStratum(I,c);
+    stratGens = flatten entries gens strat;
+    supp = SupportSetsC(stratGens, c);
+    {c, strat, supp#"y", supp#"x", supp#"d"}
+    )
 )
 
 -- main --
@@ -120,13 +150,20 @@ bbcells = BBCells(A1,A2)
 
 "example1cell.txt" << netList bbcells << close
 
-fn = "output.csv";
+"example1strata.txt" << netList bbstrata << close
 
 -- Write to excel
-fn << "IndexingSet,Generators\n";
+fn = "output.csv";
 
-for entry in pairs bbstrata do (
-  fn << "\"" | toString entry#0 | "\"" | "," | "\"" | toString entry#1 | "\"" | "\n";
+fn << "IndexingSet,Generators,I1,I2,C\n";
+
+for entry in bbstrata do (
+  fn << "\"" | toString entry#0 | "\"" | "," | 
+        "\"" | toString entry#1 | "\"" | "," |
+        "\"" | toString entry#2 | "\"" | "," |
+        "\"" | toString entry#3 | "\"" | "," |
+        "\"" | toString entry#4 | "\"" | "," |
+        "\n";
 );
 
 fn << close;
@@ -136,4 +173,10 @@ fixedpts = SchubertfixedPts(A1, A2);
 length fixedPts -- number of fixed pts 
 netList fixedPts -- fixed pts list
 
+---
+
+bbstrata#{1,2,3,4,5}
+lst= flatten entries gens bbstrata#{1,2,3,4,5}
+coords= {1,2,3,4,5}
+SupportSetsC(lst,coords)
 
