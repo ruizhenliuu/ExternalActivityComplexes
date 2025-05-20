@@ -43,34 +43,63 @@ BBStratum(Ideal, List) := (I, S) ->  (
     saturate(radical I+Wall, Zs)
 )
 
+-- Precondition: a list of generators, return support of x, y and combined 
+-- Postcondition: a hashTable. "x" => support set for x, "y" => support set for y, "d" =>
+-- generator-wise union of support of x and y. 
+SupportSets = method()
+SupportSets(List) := (lst) -> (
+    n = dim ring lst#0 // 2; 
+    xSupp = {};
+    ySupp = {};
+    dilworthSupp = {};
+    for eq in lst do (
+       allsupp = apply(flatten entries monomials eq, support);
+       for m in allsupp do (
+            i2 = set apply(select(m, v -> match("x_",toString v)), 
+            m -> index(m)+1 );
+            i1 = set apply(select(m, v -> match("y_",toString v)), 
+            m -> index(m)-n + 1);
+            xSupp = append(xSupp, i2);
+            ySupp = append(ySupp, i1);
+            dilworthSupp = append(dilworthSupp, i1+i2);
+       );
+       dilworthSupp = append(dilworthSupp, set sx + set sy);
+    );
+    hashTable {"x" => set xSupp, "y" => set ySupp, "d"=>set dilworthSupp}
+)
 
--- Given two an r1-by-n matrix A1 and an r2-by-n matrix A2, return the Bialynicki-Birula
+-- Precondition: two an r1-by-n matrix A1 and an r2-by-n matrix A2,
+-- Postcondition: the Bialynicki-Birula
 -- stratification of the matroid Schubert variety of the pair (A1, A2).
 -- Atrata given in the form (zero coordinates, equation at A^I)
+-- given as a hash map, key by the zero set 
+
 BBCells = method()
 BBCells(Matrix, Matrix) := (A1,A2) -> (
     Coords := fixedPtCoordList(A1,A2);
     I = affineSchubertVariety(A1,A2);
     n = dim ring I // 2;
-    for c in Coords list (
+    hashTable for c in Coords list (
         J = sub(I, toList (
         ((1..n)/(i->(x_i => if isMember(i,c) then x_i else 1))) |
         ((1..n)/(i->(y_i => if isMember(i,c) then 1 else 0)))
         )
     );
-    {c,J}
+    c => J
     )
 )
 
--- Given two an r1-by-n matrix A1 and an r2-by-n matrix A2, return the Bialynicki-Birula
+-- Precondition: two an r1-by-n matrix A1 and an r2-by-n matrix A2, 
+-- Postcondition: hash map of Bialynicki-Birula 
 -- stratification of the matroid Schubert variety of the pair (A1, A2).
 -- Atrata given in the form (zero coordinates, equation for stratum closure)
+-- given as a hash map, key by the zero set 
 
 BBStrataFromA1 = method()
 BBStrataFromA1(Matrix, Matrix) := (A1,A2) -> (
     Coords := fixedPtCoordList(A1,A2);
     I = affineSchubertVariety(A1,A2);
-    for c in Coords list {c,BBStratum(I,c)}
+    hashTable for c in Coords list c => BBStratum(I,c)
 )
 
 -- main --
@@ -86,6 +115,7 @@ A2 = matrix{
 } 
 
 bbstrata = BBStrataFromA1(A1,A2)
+
 bbcells = BBCells(A1,A2)
 
 "example1cell.txt" << netList bbcells << close
@@ -95,7 +125,7 @@ fn = "output.csv";
 -- Write to excel
 fn << "IndexingSet,Generators\n";
 
-for entry in bbstrata do (
+for entry in pairs bbstrata do (
   fn << "\"" | toString entry#0 | "\"" | "," | "\"" | toString entry#1 | "\"" | "\n";
 );
 
