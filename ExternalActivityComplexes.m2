@@ -41,7 +41,22 @@ diagonalDilworthTruncation(Matroid, Matroid) := Matroid => (M1,M2) -> (
 	);
     circuitsFinal := apply(toList circuitList, i-> toList i);
     matroid(toList G, circuitsFinal, EntryMode => "circuits")
-    )
+)
+
+
+dilworthTruncation = method()
+
+dilworthTruncation(Matroid):= Matroid => M -> (
+    E := select(flats M, I -> rank(M,I) == 2);
+    possibleCircuits := drop(subsets E,1);
+    circuitList := new MutableList;
+    for C in possibleCircuits do (
+        if rank(M, sum C) == #C then circuitList#(#circuitList) = C;
+    );
+    circuitFinal := apply(toList circuitList, i -> toList i);
+    matroid(E, circuitFinal, EntryMode => "circuits")
+);
+
 
 
 kempfCollapsing = method(
