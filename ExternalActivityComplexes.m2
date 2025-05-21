@@ -43,6 +43,7 @@ diagonalDilworthTruncation(Matroid, Matroid) := Matroid => (M1,M2) -> (
     matroid(toList G, circuitsFinal, EntryMode => "circuits")
     )
 
+
 kempfCollapsing = method(
     Options => {
 	CoefficientRing => QQ
