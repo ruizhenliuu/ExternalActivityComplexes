@@ -20,7 +20,7 @@ export{
     "diagonalDilworthTruncation",	  --documented, has tests
     "kempfCollapsing",			  --no doc, no tests
     "affineSchubertVariety",		  --no doc, no tests
-    "kempfCollapsingBeta"		  --no doc, no tests
+    "kempfCollapsingBeta",		  --no doc, no tests
 }
     
 ------------------------------------------------------------------------------
@@ -40,7 +40,8 @@ diagonalDilworthTruncation(Matroid, Matroid) := Matroid => (M1,M2) -> (
 	if (rank(M1,C) + rank(M2,C) == #C) then circuitList#(#circuitList) = C;
 	);
     circuitsFinal := apply(toList circuitList, i-> toList i);
-    matroid(toList G, circuitsFinal, EntryMode => "circuits")
+    M := matroid(toList G, circuitsFinal, EntryMode => "circuits");
+    matroid(toList G, bases M, EntryMode => "bases")
 )
 
 
