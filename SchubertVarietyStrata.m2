@@ -128,9 +128,29 @@ BBStrataFromA1(Matrix, Matrix) := (A1,A2) -> (
     strat =  BBStratum(I,c);
     stratGens = flatten entries gens strat;
     supp = SupportSetsC(stratGens, c);
-    {c, strat, supp#"y", supp#"x", supp#"d"}
+    {c, stratGens, supp#"y", supp#"x", supp#"d", primaryDecomposition strat}
     )
 )
+
+BBStrataAlt = method()
+BBStrataAlt(Matrix, Matrix) := (A1,A2) -> (
+    Coords := fixedPtCoordList(A1,A2);
+    I = affineSchubertVariety(A1,A2);
+    M1 = matroid A1;
+    M2 = matroid A2;
+    E = groundSet M1;
+    for c in Coords list (
+        strat =  BBStratum(I,c);
+        stratGens = flatten entries gens strat;
+        supp = SupportSetsC(stratGens, c);
+        M3 = M1 | set c;
+        M4 = M2 / (E - set c);
+        D = diagonalDilworthTruncation(M3,M4);
+        {c, stratGens, supp#"y", supp#"x", supp#"d", rank M3, rank M4, rank D,rank(D) == rank M3 +
+        rank M4 - 1}
+    )
+)
+
 
 -- main --
 A1 = matrix{
@@ -153,29 +173,56 @@ bbcells = BBCells(A1,A2)
 "example1strata.txt" << netList bbstrata << close
 
 -- Write to excel
-fn = "output.csv";
+fn = "output7.csv";
 
-fn << "IndexingSet,Generators,I1,I2,C\n";
+fn << "IndexingSet,Generators,I1,I2,C,primaryDecomposition\n";
 
 for entry in bbstrata do (
   fn << "\"" | toString entry#0 | "\"" | "," | 
         "\"" | toString entry#1 | "\"" | "," |
         "\"" | toString entry#2 | "\"" | "," |
         "\"" | toString entry#3 | "\"" | "," |
-        "\"" | toString entry#4 | "\"" | "\n";
+        "\"" | toString entry#4 | "\"" | "," |
+        -- "\"" | toString entry#5 | "\"" | "," |
+        -- "\"" | toString entry#6 | "\"" | "," |
+        "\"" | toString entry#5 | "\"" | "\n";
 );
 
 fn << close;
 
 fixedpts = SchubertfixedPts(A1, A2);
 
-length fixedPts -- number of fixed pts 
-netList fixedPts -- fixed pts list
+length fixedpts -- number of fixed pts 
+netList fixedpts -- fixed pts list
 
 ---
 
-bbstrata#{1,2,3,4,5}
-lst= flatten entries gens bbstrata#{1,2,3,4,5}
-coords= {1,2,3,4,5}
-SupportSetsC(lst,coords)
+A3 = transpose matrix {{1,0},{1,5},{1,4},{1,1},{1,2},{1,3}}
+
+A4 = transpose matrix {{1,1},{1,6},{1,5},{1,2},{1,3},{1,9}}
+
+bbstrata = BBStrataFromA1(A3,A4)
+
+-- 
+
+A2 = matrix{
+    {1,0,0,1,0,1,1},
+    {0,1,0,0,1,1,1},
+    {0,0,1,1,1,0,1}
+}
+
+A1 =  matrix{
+    {1,1,1,1,1,1,1},
+    -- {0,1,0,1,2,2,2},
+    {0,1,1,1,1,1,1}
+}
+
+bbstrata = BBStrataFromA1(A1,A2)
+
+M1 = matroid A1;
+
+M2 = matroid A2;
+
+D = diagonalDilworthTruncation(M1,M2)
+
 
